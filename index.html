@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>【デモ版】DailyQuickLog</title>
+<style>
+:root{
+  --blue:#2F52A0; --blue-d:#203F82; --thead:#4F6FB7; --red:#CD6866; --red-d:#B15452;
+  --sel:#E6EBF6; --line:#D9DEEA; --text:#1F1F1F; --muted:#8A8A8A;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#3B3B3B;font-family:"Segoe UI","Meiryo","Yu Gothic UI",sans-serif;color:var(--text)}
+#bar{height:34px;background:#000;color:#fff;display:flex;align-items:center;gap:18px;padding:0 16px;font-size:13px}
+#bar b{font-weight:600}
+#bar .note{margin-left:auto;color:#ddd;font-size:12px}
+#bar .demobtn{background:#333;color:#fff;border:1px solid #777;border-radius:3px;font-size:12px;padding:3px 10px;cursor:pointer}
+.set-wrap{display:flex;padding:30px 0 0 6px}
+.set-col{width:770px;flex:none}
+.set-col.r{width:auto;flex:1}
+.set-h{display:flex;align-items:center;gap:12px}
+.set-h h2{font-size:27px;font-weight:700;text-decoration:underline;margin:0}
+.set-desc{font-size:15px;color:#666;margin:6px 0 24px}
+.set-grid{display:grid;grid-template-columns:330px 1fr;row-gap:14px;padding-left:12px}
+.set-grid .lab{color:#2F52A0;font-size:18px}
+.set-grid .val{font-size:18px;padding-left:6px}
+.set-grid select{width:400px;height:46px;font-size:18px;border:2px solid var(--blue);padding:0 8px;background:#fff;color:var(--text)}
+.set-grid .ap-mail{font-size:20px;height:46px;display:flex;align-items:center}
+.set-grid select:disabled{background:#F3F4F8;border-color:#AEB9D6;color:#555;opacity:1;cursor:default}
+.set-info{color:#888;font-size:18px;line-height:1.5;margin-top:14px}
+.dows{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;width:550px}
+.dows .n{font-size:22px;font-weight:700;color:#1C2E9B}
+.dows .c{height:46px;display:flex;align-items:center;justify-content:center}
+.dows .c button{background:none;border:2px dashed #BBB;width:40px;height:40px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.dows .c button.on{border-color:transparent}
+#stage{position:absolute;top:34px;left:0;right:0;bottom:0;overflow:hidden}
+#canvas{width:1366px;height:768px;background:#fff;transform-origin:0 0;position:absolute;top:0;overflow:hidden}
+button{font-family:inherit}
+.btn{background:var(--blue);color:#fff;border:2px solid var(--blue-d);border-radius:4px;font-weight:700;cursor:pointer}
+.btn.red{background:var(--red);border-color:var(--red-d)}
+.btn:disabled{background:#EDEDED;color:#A9A9A9;border-color:#BDBDBD;cursor:default}
+.btn:focus-visible,.icon:focus-visible,.demobtn:focus-visible,.tab:focus-visible,.arrow:focus-visible,.trash:focus-visible,.pen:focus-visible,
+.savebtn:focus-visible,.secbtn:focus-visible,.reqbtn:focus-visible,.spin button:focus-visible,.dows .c button:focus-visible,.rb:focus-visible{outline:3px solid #F2B705;outline-offset:2px}
+.tbl tr.pick:focus-visible{outline:3px solid #F2B705;outline-offset:-3px}
+select,input{font-family:inherit}
+/* header */
+.hdr{height:54px;display:flex;align-items:center;padding:0 10px;border-bottom:2px solid #EEF0F5;gap:0}
+.hdr .title{font-size:26px;font-weight:700;margin:0 22px 0 6px;white-space:nowrap}
+.hdr .kv{display:flex;align-items:center;font-size:15px;margin-right:30px;white-space:nowrap}
+.hdr .kv b{margin-right:12px}
+.icon{background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center}
+.hdr .right{margin-left:auto}
+.empsel{font-size:15px;padding:3px 4px;border:1px solid var(--blue);background:#E6EBF6;min-width:120px}
+/* home */
+.homebtns{display:flex;justify-content:center;gap:28px;margin:22px 0 18px}
+.homebtns .btn{width:290px;height:66px;font-size:27px}
+.statbar{display:flex;align-items:center;border-bottom:2px solid var(--blue-d);padding:0 0 4px 0;height:46px}
+.statbar .who{background:#E9ECF4;font-weight:700;font-size:16px;padding:9px 30px;margin-left:0}
+.statbar select{margin-left:26px;font-size:17px;padding:5px 8px;border:1px solid var(--blue);width:190px}
+.legend{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:15px;padding-right:14px}
+.legend b{font-size:17px;margin-right:10px}
+.legend svg{width:30px;height:30px}
+.legend span{margin-right:12px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);padding:0 2px}
+.cal .dow{text-align:center;font-weight:700;font-size:17px;padding:8px 0}
+.cal .cell{height:78px;border-bottom:2px solid #EEF0F5;display:flex;align-items:flex-start;padding:10px 0 0 14px;gap:20px}
+.cal .num{font-size:22px;font-weight:700;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.cal .num.today{background:#B9C7E3}
+.cal svg{width:44px;height:44px;margin-top:8px}
+.sun{color:#9B1C1C}.sat{color:#1C2E9B}
+/* tables */
+.tbl{width:100%;border-collapse:collapse;table-layout:fixed}
+.tbl th{background:var(--thead);color:#fff;font-size:15px;text-align:left;padding:4px 8px;font-weight:700}
+.tbl td{font-size:14px;padding:6px 8px;vertical-align:top;border-bottom:1px solid #F1F2F6}
+.tbl tr.sel td{background:var(--sel);font-weight:700}
+.clamp{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.25}
+.scroll{overflow-y:auto}
+.tabs{display:flex;gap:6px;margin:8px 0 0 10px}
+.tab{width:180px;height:30px;border-radius:6px 6px 0 0;border:none;font-size:16px;font-weight:700;color:#fff;background:#94A9D6;cursor:pointer}
+.tab.on{background:var(--blue)}
+.radio{width:24px;height:24px;border:2px solid #2E3E66;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;background:#fff}
+.radio.on::after{content:"";width:12px;height:12px;border-radius:50%;background:#2E3E66}
+/* fav */
+.favsearch{display:flex;gap:30px;margin:10px 0 0 20px;font-size:17px;align-items:center}
+.favsearch label,.favsearch .rb{display:flex;align-items:center;gap:10px;cursor:pointer}
+.favsearch .rb{background:none;border:none;padding:0;font-size:17px;color:inherit}
+.lvrow{display:flex;gap:36px;margin:14px 0 0 30px}
+.lvbox{width:418px}
+.lvbox .lab{color:#2F52A0;font-size:17px;margin-bottom:6px}
+.lvbox select,.lvbox input{width:100%;height:42px;font-size:15px;border:2px solid var(--blue);padding:0 8px;background:#fff}
+.regrow{display:flex;justify-content:flex-end;gap:220px;margin:16px 60px 8px 0}
+.favsearch.dim{opacity:.45;pointer-events:none}
+.outtext{width:100%;height:46px;font-size:16px;border:2px solid var(--blue);padding:0 10px}
+.regrow .btn{width:340px;height:44px;font-size:22px;background:#EEF0F7;color:var(--blue);border-color:#9AA8CC}
+.regrow .btn:not(:disabled):hover{background:#DCE3F3}
+.regrow .btn:disabled{color:#B0B0B0;background:#F3F3F3;border-color:#CFCFCF}
+/* stamp */
+.datenav{position:absolute;top:66px;left:0;right:0;display:flex;justify-content:center;align-items:center;gap:40px;pointer-events:none}
+.datenav *{pointer-events:auto}
+.datenav .d{font-size:30px;font-weight:700}
+.arrow{font-size:40px;color:var(--blue);background:none;border:none;cursor:pointer;line-height:1}
+.arrow:disabled{color:#CCC;cursor:default}
+.arrow.wk{padding:0;display:flex;align-items:center}
+.stampbtns{display:flex;justify-content:center;gap:34px;margin:8px 0}
+.stampbtns .btn{width:300px;height:54px;font-size:21px}
+.sec-title{font-size:19px;font-weight:700;text-decoration:underline;margin:4px 0 4px 8px}
+.foot{position:absolute;left:10px;bottom:8px;font-size:13px;color:#555;line-height:1.5}
+.gobtn{position:absolute;right:12px;bottom:10px;width:300px;height:44px;font-size:21px}
+.trash,.pen{width:26px;height:26px;cursor:pointer;background:none;border:none;padding:0}
+.pen.off,.trash:disabled{cursor:default;filter:grayscale(1);opacity:.5}
+.tin{width:56px;height:30px;border:2px solid #2F52A0;border-radius:4px;font-size:14px;text-align:center;padding:0 2px}
+.savebtn{background:none;border:none;padding:0;cursor:pointer;width:30px;height:30px}
+.savebtn svg{width:30px;height:30px}
+.savebtn:disabled{cursor:default;filter:grayscale(1);opacity:.55}
+.tbl tr.editing td{vertical-align:middle}
+.badge{display:inline-block;background:#F6D5D5;color:#8B1E1E;font-weight:700;font-size:13px;padding:3px 4px;white-space:nowrap}
+/* confirm */
+.cf-row{display:flex;align-items:center}
+.cf-left{width:450px;flex:none}
+.cf-arr{width:28px;flex:none;display:flex;justify-content:center}
+.cf-day{width:120px;flex:none;display:flex;gap:4px;padding:0 2px}
+.cf-day.full{display:block;text-align:center}
+.rem{font-size:15px;display:flex;align-items:center;justify-content:center;gap:4px;height:26px}
+.rem .v{min-width:56px;text-align:right;padding:0 6px;font-weight:700;font-size:18px}
+.rem .v.red{background:#E06666;color:#fff}
+.dhead{background:var(--thead);color:#fff;font-weight:700;text-align:center;font-size:16px;line-height:1.15;padding:2px 0}
+.dhead small{display:block;font-size:13px}
+.dstat{height:20px;font-size:13px;color:#9a9a9a;text-align:center;margin-top:2px}
+.dstat.sashi{background:#E06666;color:#fff;font-weight:700}
+.secbtn{background:var(--blue);color:#fff;border:2px solid var(--blue-d);border-radius:4px;font-weight:700;font-size:17px;padding:4px 28px;cursor:pointer;margin:6px 0 4px 6px}
+.colh{display:flex;align-items:center;height:22px}
+.colh .l{display:flex;gap:4px;width:450px}
+.colh .l div,.colh .h{background:var(--thead);color:#fff;font-size:12px;font-weight:700;padding:2px 4px;height:20px;white-space:nowrap}
+.colh .h{flex:1;text-align:center}
+.rows{overflow-y:auto}
+.rows .cf-row{min-height:44px;border-bottom:1px solid #EEF0F5}
+.rows .cf-left{display:flex;gap:4px;font-size:13px;padding:3px 2px}
+.tcell{display:flex;align-items:center;border:1px solid #8FA2CF;width:60px;height:32px;background:#fff}
+.spin{display:flex;flex-direction:column;width:14px;height:28px;margin-left:1px;border:1px solid #D88;border-radius:2px}
+.spin button{flex:1;border:none;background:#fff;color:#C55;font-size:7px;padding:0;cursor:pointer;line-height:1}
+.tcell input,.acell{width:44px;height:28px;border:none;text-align:right;font-size:15px;font-weight:600;padding-right:3px}
+.acell{width:56px;height:32px;border:1px solid #8FA2CF}
+.ro{width:58px;text-align:right;font-size:16px;font-weight:600;padding-right:4px}
+.sum{font-size:13px;line-height:1.7}
+.sum .r{display:flex;justify-content:space-between;padding-right:8px}
+.sum input{width:40px;height:22px;text-align:right;border:1px solid #8FA2CF;font-size:13px}
+.reqbtn{width:100px;height:32px;font-size:14px;margin:6px 0 0 8px;background:#F3F3F3;color:#A9A9A9;border:2px solid #CFCFCF;border-radius:4px;font-weight:700}
+.reqbtn.on{background:var(--blue);color:#fff;border-color:var(--blue-d);cursor:pointer}
+.notes{font-size:12px;color:#555;line-height:1.4;padding:2px 10px}
+/* modal */
+#modal{position:absolute;inset:0;background:rgba(255,255,255,.78);display:none;align-items:center;justify-content:center;z-index:50}
+#modal.on{display:flex}
+#modal .box{text-align:center}
+#modal .msg{font-size:20px;font-weight:700;line-height:1.5;margin-bottom:60px;white-space:pre-line}
+#modal .btns{display:flex;gap:80px;justify-content:center}
+#modal .btns .btn{width:180px;height:46px;font-size:22px}
+#modal .form{background:#fff;border:2px solid var(--blue);padding:22px 30px;margin-bottom:30px;text-align:left;min-width:520px;box-shadow:0 6px 20px rgba(0,0,0,.15)}
+#modal .form .f{display:flex;align-items:center;gap:14px;margin:10px 0;font-size:16px}
+#modal .form .f b{width:150px}
+#modal .form input{height:36px;font-size:16px;border:2px solid var(--blue);padding:0 8px}
+#modal .err{color:#C0392B;font-weight:700;min-height:22px;font-size:15px}
+.gearmenu{position:absolute;right:10px;top:4px;background:#fff;border:2px solid var(--blue);z-index:40;box-shadow:0 6px 16px rgba(0,0,0,.18)}
+.gearmenu button{display:block;width:300px;text-align:left;padding:12px 16px;font-size:15px;background:#fff;border:none;border-bottom:1px solid #EEE;cursor:pointer}
+.gearmenu button:hover{background:var(--sel)}
+.gearmenu .src{padding:10px 16px;font-size:12px;color:#666}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="bar"><b>Power Apps</b><span>|</span><b>【デモ版】DailyQuickLog</b>
+  <span class="note">説明会用のデモ版です。入力内容はこのPCのブラウザ内にのみ保存され、どこにも送信・収集されません。</span>
+  <button class="demobtn" onclick="A.gear()">管理者用メニュー</button></div>
+<div id="stage"><div id="canvas"><div id="screen"></div><div id="modal"></div></div></div>
+<input type="file" id="xfile" accept=".xlsx" style="display:none">
+<script>
+/* =========================================================
+   設定値（デモ用）
+   ========================================================= */
+const DEMO_TODAY = '2026-12-01';                 // デモ上の「今日」
+const WEEKS = ['2026-11-22','2026-11-29','2026-12-06']; // 確認画面で表示できる週（日曜始まり）
+const MONTHS = ['2026-11','2026-12'];            // 提出状況確認で選べる月
+const HOLIDAYS = {'2026-11-03':1,'2026-11-23':1,'2026-12-30':1,'2026-12-31':1};
+const REGULAR = 480;                              // 規定時間（分）
+const EMPS = [
+  {no:'GrCP001', name:'demo.user01', company:'Astemo株式会社', dept:'GrCP', group:'契約管理課', flag:'一般ユーザー', approver:'demo.approver01@example.com'},
+  {no:'GrCP002', name:'demo.user02', company:'Astemo株式会社', dept:'GrCP', group:'対価回収課', flag:'一般ユーザー', approver:'demo.approver02@example.com'}
+];
+// 承認者として選べるダミーの上長（本番では従業員マスタで権限フラグ＝承認者の人）
+const APPROVERS = [
+  {mail:'demo.approver01@example.com', name:'demo.approver01', company:'Astemo株式会社', dept:'GrCP'},
+  {mail:'demo.approver02@example.com', name:'demo.approver02', company:'Astemo株式会社', dept:'GrCP'},
+  {mail:'demo.approver03@example.com', name:'demo.approver03', company:'Astemo株式会社', dept:'GrCP'}
+];
+const BREAK = {id:'X-001-001-001', lv1:'共通業務', lv2:'共通業務', lv3:'休憩・離席（昼休憩を含む）'};
+const ADMIN_PASS = 'GrCP';                       // 管理者用メニューを開くためのパスワード
+const STORE_KEY = 'dqlDemo_v2';                 // 旧バージョンの保存データ（形式が異なる）を読み込まないよう v2 に変更
+const EMBEDDED_MASTER = {"work":[{"dept":"GrCP","group":"契約企画課","lv1":"契約企画業務","lv2":"契約企画","lv3":"雛形整理(業務委託契約/特殊契約)"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"その他(契約管理業務)","lv3":"相談対応/展開"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"その他(契約管理業務)","lv3":"定例会(GrCP/BU設計管理)"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"その他(契約管理業務)","lv3":"週報"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"その他(契約管理業務)","lv3":"月報"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"その他(契約管理業務)","lv3":"案件抽出/定期フォロー"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"その他(契約管理業務)","lv3":"標準化"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"技提契約及び覚書","lv3":"A2-1｜業務開始フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"技提契約及び覚書","lv3":"A2-2｜契約書作成フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"技提契約及び覚書","lv3":"A2-3｜チームレビューフェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"技提契約及び覚書","lv3":"A2-4｜部長決裁レビューフェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"技提契約及び覚書","lv3":"A2-5｜法務部リーガルチェックフェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"技提契約及び覚書","lv3":"A2-6｜BU/現法へ確認依頼フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"技提契約及び覚書","lv3":"A2-7｜伺書作成フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"技提契約及び覚書","lv3":"A2-8｜伺書合議フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"技提契約及び覚書","lv3":"A2-9｜署名フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"技提契約及び覚書","lv3":"A2-10｜完了フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"技提契約覚書/技術情報開示料契約(中国)","lv3":"A3-1｜業務開始フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"技提契約覚書/技術情報開示料契約(中国)","lv3":"A3-2｜契約書作成フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"技提契約覚書/技術情報開示料契約(中国)","lv3":"A3-3｜チームレビューフェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"技提契約覚書/技術情報開示料契約(中国)","lv3":"A3-4｜部長決裁レビューフェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"技提契約覚書/技術情報開示料契約(中国)","lv3":"A3-5｜法務部リーガルチェックフェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"技提契約覚書/技術情報開示料契約(中国)","lv3":"A3-6｜BU/現法へ確認依頼フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"技提契約覚書/技術情報開示料契約(中国)","lv3":"A3-7｜伺書作成フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"技提契約覚書/技術情報開示料契約(中国)","lv3":"A3-8｜伺書合議フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"技提契約覚書/技術情報開示料契約(中国)","lv3":"A3-9｜署名フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"技提契約覚書/技術情報開示料契約(中国)","lv3":"A3-10｜完了フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"業務委託契約","lv3":"A4-1｜業務開始フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"業務委託契約","lv3":"A4-2｜契約書作成フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"業務委託契約","lv3":"A4-3｜チームレビューフェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"業務委託契約","lv3":"A4-4｜部長決裁レビューフェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"業務委託契約","lv3":"A4-5｜法務部リーガルチェックフェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"業務委託契約","lv3":"A4-6｜BU/現法へ確認依頼フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"業務委託契約","lv3":"A4-7｜伺書作成フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"業務委託契約","lv3":"A4-8｜伺書合議フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"業務委託契約","lv3":"A4-9｜署名フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"業務委託契約","lv3":"A4-10｜完了フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"「合弁契約・定款」延長","lv3":"A5-1｜業務開始フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"「合弁契約・定款」延長","lv3":"A5-2｜契約書作成フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"「合弁契約・定款」延長","lv3":"A5-3｜チームレビューフェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"「合弁契約・定款」延長","lv3":"A5-4｜部長決裁レビューフェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"「合弁契約・定款」延長","lv3":"A5-5｜法務部リーガルチェックフェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"「合弁契約・定款」延長","lv3":"A5-6｜BU/現法へ確認依頼フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"「合弁契約・定款」延長","lv3":"A5-7｜伺書作成フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"「合弁契約・定款」延長","lv3":"A5-8｜伺書合議フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"「合弁契約・定款」延長","lv3":"A5-9｜署名フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"「合弁契約・定款」延長","lv3":"A5-10｜完了フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"NDA(技術情報開示/テンプレート以外)","lv3":"A6-1｜業務開始フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"NDA(技術情報開示/テンプレート以外)","lv3":"A6-2｜契約書作成フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"NDA(技術情報開示/テンプレート以外)","lv3":"A6-3｜チームレビューフェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"NDA(技術情報開示/テンプレート以外)","lv3":"A6-4｜部長決裁レビューフェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"NDA(技術情報開示/テンプレート以外)","lv3":"A6-5｜法務部リーガルチェックフェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"NDA(技術情報開示/テンプレート以外)","lv3":"A6-6｜BU/現法へ確認依頼フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"NDA(技術情報開示/テンプレート以外)","lv3":"A6-7｜伺書作成フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"NDA(技術情報開示/テンプレート以外)","lv3":"A6-8｜伺書合議フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"NDA(技術情報開示/テンプレート以外)","lv3":"A6-9｜署名フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"NDA(技術情報開示/テンプレート以外)","lv3":"A6-10｜完成フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"開発費予実管理","lv3":"A8-1｜開発費予実管理"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"開発費予実管理","lv3":"A8-2｜管理者による承認・レビュー"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"開発委託業務管理(出金)","lv3":"A9-1｜業務開始フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"開発委託業務管理(出金)","lv3":"A9-2｜契約書作成フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"開発委託業務管理(出金)","lv3":"A9-3｜チームレビューフェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"開発委託業務管理(出金)","lv3":"A9-4｜部長決裁レビューフェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"開発委託業務管理(出金)","lv3":"A9-5｜法務部リーガルチェックフェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"開発委託業務管理(出金)","lv3":"A9-6｜BU/現法へ確認依頼フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"開発委託業務管理(出金)","lv3":"A9-7｜伺書作成フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"開発委託業務管理(出金)","lv3":"A9-8｜伺書合議フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"開発委託業務管理(出金)","lv3":"A9-9｜署名フェーズ"},{"dept":"GrCP","group":"契約管理課","lv1":"契約管理業務","lv2":"開発委託業務管理(出金)","lv3":"A9-10｜完了フェーズ"},{"dept":"GrCP","group":"対価回収課","lv1":"KD窓口","lv2":"KD見積","lv3":"A1-1｜RFQ受領~社内見積依頼"},{"dept":"GrCP","group":"対価回収課","lv1":"KD窓口","lv2":"KD見積","lv3":"A1-2｜見積展開会議"},{"dept":"GrCP","group":"対価回収課","lv1":"KD窓口","lv2":"KD見積","lv3":"A1-3｜社内見積受領に向けた各所との調整"},{"dept":"GrCP","group":"対価回収課","lv1":"KD窓口","lv2":"KD見積","lv3":"A1-4｜社内見積受領~見積書作成~発行"},{"dept":"GrCP","group":"対価回収課","lv1":"KD窓口","lv2":"KD見積","lv3":"A1-5｜注文書受領~受注/売価登録"},{"dept":"GrCP","group":"対価回収課","lv1":"KD窓口","lv2":"KD見積","lv3":"A1-6｜電子取引フォルダー保存"},{"dept":"GrCP","group":"対価回収課","lv1":"KD窓口","lv2":"KD見積","lv3":"A1-7｜管理者による承認/レビュー"},{"dept":"GrCP","group":"対価回収課","lv1":"KD窓口","lv2":"市況変動精算(USMRP1/FORD)","lv3":"A2-1｜市況変動精算"},{"dept":"GrCP","group":"対価回収課","lv1":"KD窓口","lv2":"材料変動・為替調整見積","lv3":"A3-1｜社内展開~社内見積依頼"},{"dept":"GrCP","group":"対価回収課","lv1":"KD窓口","lv2":"材料変動・為替調整見積","lv3":"A3-2｜社内見積受領~見積書作成~発行"},{"dept":"GrCP","group":"対価回収課","lv1":"KD窓口","lv2":"材料変動・為替調整見積","lv3":"A3-3｜現法フォロー/問い合わせ対応"},{"dept":"GrCP","group":"対価回収課","lv1":"KD窓口","lv2":"材料変動・為替調整見積","lv3":"A3-4｜売価登録"},{"dept":"GrCP","group":"対価回収課","lv1":"KD窓口","lv2":"材料変動・為替調整見積","lv3":"A3-5｜電子取引フォルダー保存"},{"dept":"GrCP","group":"対価回収課","lv1":"KD窓口","lv2":"材料変動・為替調整見積","lv3":"A3-6｜管理者による承認/レビュー"},{"dept":"GrCP","group":"対価回収課","lv1":"その他(対価回収業務)","lv2":"PT(パススルー)見積","lv3":"A4-1｜見積準備~社内見積依頼"},{"dept":"GrCP","group":"対価回収課","lv1":"その他(対価回収業務)","lv2":"PT(パススルー)見積","lv3":"A4-2｜社内見積受領~見積書作成~発行"},{"dept":"GrCP","group":"対価回収課","lv1":"その他(対価回収業務)","lv2":"PT(パススルー)見積","lv3":"A4-3｜電子取引フォルダー保存"},{"dept":"GrCP","group":"対価回収課","lv1":"その他(対価回収業務)","lv2":"PT(パススルー)見積","lv3":"A4-4｜管理者による承認/レビュー"},{"dept":"GrCP","group":"対価回収課","lv1":"KD窓口","lv2":"試作見積","lv3":"A6-1｜RFQ受領~社内見積依頼"},{"dept":"GrCP","group":"対価回収課","lv1":"KD窓口","lv2":"試作見積","lv3":"A6-2｜社内見積受領に向けた各所との調整"},{"dept":"GrCP","group":"対価回収課","lv1":"KD窓口","lv2":"試作見積","lv3":"A6-3｜社内見積受領~見積書作成~発行"},{"dept":"GrCP","group":"対価回収課","lv1":"KD窓口","lv2":"試作見積","lv3":"A6-4｜注文書受領~INVOICE発行"},{"dept":"GrCP","group":"対価回収課","lv1":"KD窓口","lv2":"試作見積","lv3":"A6-5｜電子取引フォルダー保存"},{"dept":"GrCP","group":"対価回収課","lv1":"KD窓口","lv2":"試作見積","lv3":"A6-6｜管理者による承認/レビュー"},{"dept":"GrCP","group":"対価回収課","lv1":"RFES、RFDS(TSF、ESF含)","lv2":"RFES(TSF含)","lv3":"A7-1｜受付"},{"dept":"GrCP","group":"対価回収課","lv1":"RFES、RFDS(TSF、ESF含)","lv2":"RFES(TSF含)","lv3":"A7-2｜派遣元への清算フォロー"},{"dept":"GrCP","group":"対価回収課","lv1":"RFES、RFDS(TSF、ESF含)","lv2":"RFES(TSF含)","lv3":"A7-3｜請求金額確認~現法合意"},{"dept":"GrCP","group":"対価回収課","lv1":"RFES、RFDS(TSF、ESF含)","lv2":"RFES(TSF含)","lv3":"A7-4｜見積書作成(IDCHなど)"},{"dept":"GrCP","group":"対価回収課","lv1":"RFES、RFDS(TSF、ESF含)","lv2":"RFES(TSF含)","lv3":"A7-5｜注文書受領~請求書発行~売掛処理"},{"dept":"GrCP","group":"対価回収課","lv1":"RFES、RFDS(TSF、ESF含)","lv2":"RFES(TSF含)","lv3":"A7-6｜納税証明書送達票対応"},{"dept":"GrCP","group":"対価回収課","lv1":"RFES、RFDS(TSF、ESF含)","lv2":"RFES(TSF含)","lv3":"A7-8｜労務費振替対応"},{"dept":"GrCP","group":"対価回収課","lv1":"RFES、RFDS(TSF、ESF含)","lv2":"RFES(TSF含)","lv3":"A7-9｜管理表記載~提出"},{"dept":"GrCP","group":"対価回収課","lv1":"RFES、RFDS(TSF、ESF含)","lv2":"RFES(TSF含)","lv3":"A7-10｜PE登録者関連対応"},{"dept":"GrCP","group":"対価回収課","lv1":"RFES、RFDS(TSF、ESF含)","lv2":"RFES(TSF含)","lv3":"A7-11｜電子取引フォルダー保存"},{"dept":"GrCP","group":"対価回収課","lv1":"RFES、RFDS(TSF、ESF含)","lv2":"RFES(TSF含)","lv3":"A7-12｜管理者による承認/レビュー"},{"dept":"GrCP","group":"対価回収課","lv1":"開示料(機種開発費、DFTI、DTD含)","lv2":"開示料(機種開発費、DFTI、DTD含)","lv3":"A8-1｜見積書作成~発行~注文書受領~転送"},{"dept":"GrCP","group":"対価回収課","lv1":"開示料(機種開発費、DFTI、DTD含)","lv2":"開示料(機種開発費、DFTI、DTD含)","lv3":"A8-2｜請求依頼受領~請求書発行~売掛処理"},{"dept":"GrCP","group":"対価回収課","lv1":"開示料(機種開発費、DFTI、DTD含)","lv2":"開示料(機種開発費、DFTI、DTD含)","lv3":"A8-3｜納税証明書送達票対応"},{"dept":"GrCP","group":"対価回収課","lv1":"開示料(機種開発費、DFTI、DTD含)","lv2":"開示料(機種開発費、DFTI、DTD含)","lv3":"A8-4｜電子取引フォルダー保存"},{"dept":"GrCP","group":"対価回収課","lv1":"開示料(機種開発費、DFTI、DTD含)","lv2":"開示料(機種開発費、DFTI、DTD含)","lv3":"A8-5｜管理者による承認/レビュー"},{"dept":"GrCP","group":"対価回収課","lv1":"RFES、RFDS(TSF、ESF含)","lv2":"RFDS(ESF含)","lv3":"A9-1｜見積書作成~発行~注文書受領"},{"dept":"GrCP","group":"対価回収課","lv1":"RFES、RFDS(TSF、ESF含)","lv2":"RFDS(ESF含)","lv3":"A9-2｜請求依頼受領~請求書発行~売掛処理"},{"dept":"GrCP","group":"対価回収課","lv1":"RFES、RFDS(TSF、ESF含)","lv2":"RFDS(ESF含)","lv3":"A9-3｜納税証明書送達票対応"},{"dept":"GrCP","group":"対価回収課","lv1":"RFES、RFDS(TSF、ESF含)","lv2":"RFDS(ESF含)","lv3":"A9-4｜電子取引フォルダー保存"},{"dept":"GrCP","group":"対価回収課","lv1":"RFES、RFDS(TSF、ESF含)","lv2":"RFDS(ESF含)","lv3":"A9-5｜管理者による承認/レビュー"},{"dept":"GrCP","group":"対価回収課","lv1":"ロイヤリティ","lv2":"ロイヤリティ","lv3":"A10-1｜計算書送付依頼~為替レート準備"},{"dept":"GrCP","group":"対価回収課","lv1":"ロイヤリティ","lv2":"ロイヤリティ","lv3":"A10-2｜計算書受領~仮計上"},{"dept":"GrCP","group":"対価回収課","lv1":"ロイヤリティ","lv2":"ロイヤリティ","lv3":"A10-3｜請求書作成~売掛処理~伝票起票"},{"dept":"GrCP","group":"対価回収課","lv1":"ロイヤリティ","lv2":"ロイヤリティ","lv3":"A10-4｜納税証明書送達票対応"},{"dept":"GrCP","group":"対価回収課","lv1":"ロイヤリティ","lv2":"ロイヤリティ","lv3":"A10-5｜電子取引フォルダー保存"},{"dept":"GrCP","group":"対価回収課","lv1":"ロイヤリティ","lv2":"ロイヤリティ","lv3":"A10-6｜管理者による承認/レビュー"},{"dept":"GrCP","group":"対価回収課","lv1":"その他(対価回収業務)","lv2":"駐在員費用","lv3":"A11-1｜請求書発行~売掛処理"},{"dept":"GrCP","group":"対価回収課","lv1":"その他(対価回収業務)","lv2":"駐在員費用","lv3":"A11-2｜電子取引フォルダー保存"},{"dept":"GrCP","group":"対価回収課","lv1":"その他(対価回収業務)","lv2":"駐在員費用","lv3":"A11-3｜管理者による承認/レビュー"},{"dept":"GrCP","group":"対価回収課","lv1":"その他(対価回収業務)","lv2":"受注予算","lv3":"A12-1｜営業企画との会議"},{"dept":"GrCP","group":"対価回収課","lv1":"その他(対価回収業務)","lv2":"受注予算","lv3":"A12-2｜受注予算作成(ロイヤリティ)"},{"dept":"GrCP","group":"対価回収課","lv1":"その他(対価回収業務)","lv2":"受注予算","lv3":"A12-3｜受注予算作成(KD部品)"},{"dept":"GrCP","group":"対価回収課","lv1":"その他(対価回収業務)","lv2":"受注予算","lv3":"A12-4｜受注予算作成(PT品)"},{"dept":"GrCP","group":"対価回収課","lv1":"その他(対価回収業務)","lv2":"受注予算","lv3":"A12-5｜受注予算作成(技術支援)"},{"dept":"GrCP","group":"対価回収課","lv1":"その他(対価回収業務)","lv2":"受注予算","lv3":"A12-6｜受注予算作成(開発費)"},{"dept":"GrCP","group":"対価回収課","lv1":"その他(対価回収業務)","lv2":"受注予算","lv3":"A12-7｜管理者による承認/レビュー"},{"dept":"GrCP","group":"対価回収課","lv1":"KD窓口","lv2":"能力検討/生産能力確認","lv3":"A13-1｜能力検討/生産能力確認"},{"dept":"GrCP","group":"対価回収課","lv1":"KD窓口","lv2":"能力検討/生産能力確認","lv3":"A13-2｜管理者による承認/レビュー"},{"dept":"GrCP","group":"対価回収課","lv1":"その他(対価回収業務)","lv2":"入金管理(ステートメント、Payment List)(KD,RR,RFES etc)","lv3":"A14-1｜入金管理(ステートメント,Payment List)"},{"dept":"GrCP","group":"対価回収課","lv1":"その他(対価回収業務)","lv2":"入金管理(ステートメント、Payment List)(KD,RR,RFES etc)","lv3":"A14-2｜管理者による承認/レビュー"},{"dept":"GrCP","group":"対価回収課","lv1":"その他(対価回収業務)","lv2":"停滞案件対応(KD,RR,RFES ets)","lv3":"A16-1｜停滞案件対応(KD,RR,RFES ets)"},{"dept":"GrCP","group":"対価回収課","lv1":"その他(対価回収業務)","lv2":"停滞案件対応(KD,RR,RFES ets)","lv3":"A16-2｜管理者による承認/レビュー"},{"dept":"GrCP","group":"対価回収課","lv1":"KD窓口","lv2":"輸出管理","lv3":"A17-1｜輸出管理"},{"dept":"GrCP","group":"対価回収課","lv1":"KD窓口","lv2":"輸出管理","lv3":"A17-2｜管理者による承認/レビュー"},{"dept":"GrCP","group":"対価回収課","lv1":"KD窓口","lv2":"受注管理","lv3":"A18-1｜受注管理"},{"dept":"GrCP","group":"対価回収課","lv1":"KD窓口","lv2":"受注管理","lv3":"A18-2｜管理者による承認/レビュー"},{"dept":"GrCP","group":"対価回収課","lv1":"KD窓口","lv2":"日立ハイテク","lv3":"A19-1｜日立ハイテク"},{"dept":"GrCP","group":"対価回収課","lv1":"KD窓口","lv2":"日立ハイテク","lv3":"A19-2｜管理者による承認/レビュー"},{"dept":"GrCP","group":"対価回収課","lv1":"KD窓口","lv2":"代価訂正","lv3":"A20-1｜代価訂正"},{"dept":"GrCP","group":"対価回収課","lv1":"KD窓口","lv2":"代価訂正","lv3":"A20-2｜管理者による承認/レビュー"},{"dept":"GrCP","group":"対価回収課","lv1":"KD窓口","lv2":"品質関係(クレーム対応)","lv3":"A21-1｜品質関係(クレーム対応)"},{"dept":"GrCP","group":"対価回収課","lv1":"KD窓口","lv2":"品質関係(クレーム対応)","lv3":"A21-2｜管理者による承認/レビュー"},{"dept":"GrCP","group":"対価回収課","lv1":"その他(対価回収業務)","lv2":"設備見積","lv3":"A22-1｜設備見積"},{"dept":"GrCP","group":"対価回収課","lv1":"その他(対価回収業務)","lv2":"設備見積","lv3":"A22-2｜管理者による承認/レビュー"},{"dept":"GrCP","group":"対価回収課","lv1":"KD窓口","lv2":"PPAPその他提出書類","lv3":"A23-1｜PPAPその他提出書類"},{"dept":"GrCP","group":"対価回収課","lv1":"その他(対価回収業務)","lv2":"新規取引伺様式等マスタ申請","lv3":"A25-1｜新規取引伺様式等マスタ申請"},{"dept":"GrCP","group":"対価回収課","lv1":"その他(対価回収業務)","lv2":"新規取引伺様式等マスタ申請","lv3":"A25-2｜管理者による承認/レビュー"}],"common":[{"lv1":"付随業務","lv2":"会議","lv3":"部門内定例会議(朝会等)","src":"fuzui"},{"lv1":"付随業務","lv2":"会議","lv3":"全社/部門横断行事","src":"fuzui"},{"lv1":"付随業務","lv2":"会議","lv3":"他組織との打ち合わせ","src":"fuzui"},{"lv1":"付随業務","lv2":"業務運営・改善","lv3":"業務引継ぎ","src":"fuzui"},{"lv1":"付随業務","lv2":"業務運営・改善","lv3":"マニュアル作成/業務ルール整備","src":"fuzui"},{"lv1":"付随業務","lv2":"業務運営・改善","lv3":"業務改善の企画~実行","src":"fuzui"},{"lv1":"付随業務","lv2":"業務外のコミュニケーション","lv3":"オペレーション業務以外の相談対応","src":"fuzui"},{"lv1":"付随業務","lv2":"評価・育成・研修","lv3":"自己評価/1on1","src":"fuzui"},{"lv1":"付随業務","lv2":"評価・育成・研修","lv3":"研修/自己啓発","src":"fuzui"},{"lv1":"付随業務","lv2":"組織運営","lv3":"監査","src":"fuzui"},{"lv1":"付随業務","lv2":"組織運営","lv3":"IT関連対応","src":"fuzui"},{"lv1":"付随業務","lv2":"組織運営","lv3":"労組/防災","src":"fuzui"},{"lv1":"付随業務","lv2":"個人作業","lv3":"勤怠/経費精算/社内手続き","src":"fuzui"},{"lv1":"付随業務","lv2":"個人作業","lv3":"メールチェック","src":"fuzui"},{"lv1":"付随業務","lv2":"個人作業","lv3":"オペレーション業務以外の従業員コミュニケーション","src":"fuzui"},{"lv1":"付随業務","lv2":"個人作業","lv3":"業務計画/進捗管理","src":"fuzui"},{"lv1":"付随業務","lv2":"個人作業","lv3":"移動時間(外出や出張等)","src":"fuzui"},{"lv1":"付随業務","lv2":"個人作業","lv3":"休憩/離席/リフレッシュ","src":"fuzui"},{"lv1":"付随業務","lv2":"管理者業務","lv3":"部門計画/部門目標設定","src":"fuzui"},{"lv1":"付随業務","lv2":"管理者業務","lv3":"予算管理","src":"fuzui"},{"lv1":"付随業務","lv2":"管理者業務","lv3":"指導/1on1/評価","src":"fuzui"},{"lv1":"付随業務","lv2":"管理者業務","lv3":"労務管理~労務分析","src":"fuzui"},{"lv1":"定義外業務","lv2":"定義外業務","lv3":"定義外業務","src":"teigi"},{"lv1":"余力を活用した業務遂行","lv2":"余力を活用した業務遂行","lv3":"余力を活用した業務遂行","src":"teigi"}]};
+
+/* =========================================================
+   業務マスタ（master.xlsx を読めればそれを使い、読めなければ組み込みデータ）
+   ========================================================= */
+let MASTER = EMBEDDED_MASTER, masterSource = '組み込みデータ';
+const clean = s => (s==null?'':String(s)).replace(/\s*[\r\n]+\s*/g,' ').trim();
+
+async function inflateRaw(u8){
+  const s = new Blob([u8]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+  return new Uint8Array(await new Response(s).arrayBuffer());
+}
+async function unzip(buf){
+  const dv = new DataView(buf), u8 = new Uint8Array(buf), td = new TextDecoder();
+  let eocd = -1;
+  for (let i = buf.byteLength-22; i >= Math.max(0, buf.byteLength-70000); i--) if (dv.getUint32(i,true)===0x06054b50){eocd=i;break;}
+  if (eocd < 0) throw new Error('Excelファイルを読み取れません');
+  const n = dv.getUint16(eocd+10,true); let p = dv.getUint32(eocd+16,true); const files = {};
+  for (let k=0;k<n;k++){
+    const method=dv.getUint16(p+10,true), csize=dv.getUint32(p+20,true), nl=dv.getUint16(p+28,true),
+          el=dv.getUint16(p+30,true), cl=dv.getUint16(p+32,true), off=dv.getUint32(p+42,true);
+    files[td.decode(u8.subarray(p+46,p+46+nl))] = {method,csize,off};
+    p += 46+nl+el+cl;
+  }
+  return { async get(name){
+    const f = files[name]; if(!f) return null;
+    const start = f.off+30+dv.getUint16(f.off+26,true)+dv.getUint16(f.off+28,true);
+    const raw = u8.subarray(start, start+f.csize);
+    return td.decode(f.method===0 ? raw : await inflateRaw(raw));
+  }};
+}
+async function readXlsx(buf){
+  const z = await unzip(buf), P = s => new DOMParser().parseFromString(s,'application/xml');
+  const wb = P(await z.get('xl/workbook.xml')), rels = P(await z.get('xl/_rels/workbook.xml.rels'));
+  const relMap = {}; for (const r of rels.getElementsByTagName('Relationship')) relMap[r.getAttribute('Id')] = r.getAttribute('Target');
+  const ss = [], ssx = await z.get('xl/sharedStrings.xml');
+  // ふりがな（rPh）は除外し、本文（t / r>t）だけを連結する
+  if (ssx) for (const si of P(ssx).getElementsByTagName('si')){ let t='';
+    for (const ch of si.children){ if (ch.localName==='t') t+=ch.textContent;
+      else if (ch.localName==='r') for (const x of ch.children) if (x.localName==='t') t+=x.textContent; }
+    ss.push(t); }
+  const out = {};
+  for (const sh of wb.getElementsByTagName('sheet')){
+    const name = sh.getAttribute('name');
+    if (!['オペレーション業務','付随業務','定義外業務'].includes(name)) continue;
+    let tgt = relMap[sh.getAttribute('r:id')]; if(!tgt) continue;
+    tgt = tgt.replace(/^\//,''); if (!tgt.startsWith('xl/')) tgt = 'xl/'+tgt;
+    const x = P(await z.get(tgt)), rows = {};
+    for (const c of x.getElementsByTagName('c')){
+      const m = c.getAttribute('r').match(/^([A-Z]+)(\d+)$/), t = c.getAttribute('t'); let v = '';
+      if (t==='s'){ const ve=c.getElementsByTagName('v')[0]; v = ve ? ss[+ve.textContent] : ''; }
+      else if (t==='inlineStr'){ const is=c.getElementsByTagName('is')[0]; if (is) for (const ch of is.children){ if (ch.localName==='t') v+=ch.textContent; else if (ch.localName==='r') for (const y of ch.children) if (y.localName==='t') v+=y.textContent; } }
+      else { const ve=c.getElementsByTagName('v')[0]; v = ve ? ve.textContent : ''; }
+      (rows[+m[2]] ||= {})[m[1]] = v;
+    }
+    out[name] = rows;
+  }
+  return out;
+}
+function buildMaster(sh){
+  const work = [], common = [];
+  const ops = sh['オペレーション業務'] || {};
+  for (const r of Object.keys(ops).map(Number).sort((a,b)=>a-b)){
+    if (r < 5) continue;
+    const c = ops[r], d=clean(c.D), g=clean(c.E), a=clean(c.F), b=clean(c.G), l=clean(c.H);
+    if (!(a&&b&&l)) continue;                           // 業務Lv1〜3のいずれかが空の行は除外
+    work.push({dept:d, group:g, lv1:a, lv2:b, lv3:l});
+  }
+  for (const [name,st] of [['付随業務',5],['定義外業務',4]]){
+    const s = sh[name] || {};
+    for (const r of Object.keys(s).map(Number).sort((a,b)=>a-b)){
+      if (r < st) continue;
+      const c = s[r], a=clean(c.F), b=clean(c.G), l=clean(c.H);
+      if (a&&b&&l) common.push({lv1:a, lv2:b, lv3:l, src: name==='定義外業務' ? 'teigi' : 'fuzui'});
+    }
+  }
+  if (!work.length) throw new Error('オペレーション業務シートに業務が見つかりません');
+  return {work, common};
+}
+async function tryLoadMasterFile(){
+  try{
+    const res = await fetch('master.xlsx', {cache:'no-store'});
+    if (!res.ok) return;
+    MASTER = buildMaster(await readXlsx(await res.arrayBuffer()));
+    masterSource = 'master.xlsx（サーバー上のファイル）';
+    A.clearTransient();
+  }catch(e){ /* ファイルを置いていない・ダブルクリック起動時は組み込みデータを使う */ }
+}
+
+/* =========================================================
+   データ保存（このPCのブラウザ内のみ）
+   ========================================================= */
+let mem = null;
+function load(){ try{ return JSON.parse(localStorage.getItem(STORE_KEY)); }catch(e){ return mem; } }
+function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(S)); }catch(e){ mem = JSON.parse(JSON.stringify(S)); } }
+let S = load() || {emp: EMPS[0].no, data:{}};
+const ed = () => (S.data[S.emp] ||= {favs:[], stamps:[], days:{}, zc:0});
+// 設定（承認者・曜日表示）。未設定なら従業員マスタの承認者と全曜日表示を初期値にする
+const settings = () => { const d = ed(); d.approver ??= emp().approver; d.disp ||= [true,true,true,true,true,true,true]; return d; };
+const emp = () => EMPS.find(e => e.no===S.emp) || EMPS[0];
+
+/* =========================================================
+   ユーティリティ
+   ========================================================= */
+const esc = s => String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pd = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+const fd = dt => `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+const addDays = (s,n) => { const d = pd(s); d.setDate(d.getDate()+n); return fd(d); };
+const DOW = ['日','月','火','水','木','金','土'];
+const nowSec = () => { const n = new Date(); return n.getHours()*3600 + n.getMinutes()*60 + n.getSeconds(); };
+const hm = sec => sec==null ? '' : `${String(Math.floor(sec/3600)).padStart(2,'0')}:${String(Math.floor(sec%3600/60)).padStart(2,'0')}`;
+// 全角数字を半角に変換し、前後の空白を除く（時間・件数・休暇時間・時刻の入力で共通）
+const toHalf = v => String(v??'').trim().replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0)-0xFEE0));
+const parseHm = v => { v = toHalf(v).replace('：',':');
+  const m = /^(\d{1,2}):?(\d{2})$/.exec(v); if (!m || +m[1]>23 || +m[2]>59) return null; return (+m[1])*3600 + (+m[2])*60; };
+// 編集中の判定は「表示中の日付」に限定する（別日付や旧バージョンのデータに残った編集中の打刻で、ボタンが押せなくなるのを防ぐ）
+const anyEditing = () => !!ui.editId || ed().stamps.some(s => s.status==='編集中' && s.date===ui.stampDate);
+const isEditing = s => s.status==='編集中' || ui.editId===s.id;
+function draft(s){ ui.drafts ||= {}; return (ui.drafts[s.id] ||= {s:hm(s.start), e:hm(s.end), a:s.amount??''}); }
+const draftOk = d => parseHm(d.s)!=null && parseHm(d.e)!=null;
+const mins = st => (st.start!=null && st.end!=null) ? Math.round((st.end-st.start)/60) : null;
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const MIN_DATE = WEEKS[0], MAX_DATE = addDays(WEEKS[WEEKS.length-1], 6);
+
+function myList(){ return ed().favs.map(f => ({key:'F:'+f.favId, lv1:f.lv1, lv2:f.lv2, lv3:f.lv3, free:f.free||''})); }
+function commonList(){
+  return [{key:'C:'+BREAK.id, ...BREAK, free:''},
+          ...MASTER.common.map((c,i) => ({key:'C:'+c.lv1+'|'+c.lv2+'|'+c.lv3, lv1:c.lv1, lv2:c.lv2, lv3:c.lv3, free:''}))];
+}
+function rowByKey(key){ return [...myList(), ...commonList()].find(r => r.key===key); }
+function workMenu(){ const e = emp(); return MASTER.work.filter(w => w.group===e.group); }   // 所属グループ（課）で絞り込む
+const uniq = a => [...new Set(a)];
+const KEYS = []; const kid = k => { let i = KEYS.indexOf(k); if (i<0){ KEYS.push(k); i = KEYS.length-1; } return i; };
+
+/* =========================================================
+   アイコン
+   ========================================================= */
+const IC = {
+  check:'<svg viewBox="0 0 44 44"><path d="M8 24 L18 34 L37 11" stroke="#3BAA5C" stroke-width="3.2" fill="none" stroke-linecap="round"/></svg>',
+  clock:'<svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="17" stroke="#4A86E8" stroke-width="2.6" fill="none"/><path d="M22 11 V23 L29 29" stroke="#4A86E8" stroke-width="2.6" fill="none" stroke-linecap="round"/></svg>',
+  warn:'<svg viewBox="0 0 44 44"><path d="M22 5 L40 38 H4 Z" stroke="#E0A526" stroke-width="2.6" fill="none" stroke-linejoin="round"/><path d="M22 16 V28" stroke="#E0A526" stroke-width="2.8"/><circle cx="22" cy="33" r="1.8" fill="#E0A526"/></svg>',
+  cross:'<svg viewBox="0 0 44 44"><path d="M9 9 L35 35 M35 9 L9 35" stroke="#D9534F" stroke-width="2.6" stroke-linecap="round"/></svg>',
+  dash:'<svg viewBox="0 0 44 44"><path d="M4 26 H40" stroke="#C4C4C4" stroke-width="2.6"/></svg>',
+  wkPrev:'<svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13.5" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M17.5 9 L11.5 15 L17.5 21" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>',
+  wkNext:'<svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13.5" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M12.5 9 L18.5 15 L12.5 21" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>',
+  back:'<svg width="46" height="46" viewBox="0 0 46 46"><circle cx="23" cy="23" r="21" stroke="#2F52A0" stroke-width="2.6" fill="none"/><path d="M27 13 L17 23 L27 33" stroke="#2F52A0" stroke-width="3" fill="none" stroke-linecap="round"/></svg>',
+  home:'<svg width="44" height="44" viewBox="0 0 44 44"><path d="M5 22 L22 6 L39 22 M10 18 V38 H34 V18" stroke="#2F52A0" stroke-width="2.6" fill="none" stroke-linejoin="round"/></svg>',
+  gear:'<svg width="48" height="48" viewBox="0 0 48 48"><circle cx="24" cy="24" r="7" stroke="#2F52A0" stroke-width="2.6" fill="none"/><path d="M24 4 l3 6 6-2 1 6 6 1-2 6 6 3-6 3 2 6-6 1-1 6-6-2-3 6-3-6-6 2-1-6-6-1 2-6-6-3 6-3-2-6 6-1 1-6 6 2z" stroke="#2F52A0" stroke-width="2.2" fill="none" stroke-linejoin="round"/></svg>',
+  trash:'<svg viewBox="0 0 26 26"><path d="M6 7 H20 M10 7 V4 H16 V7 M7 7 L8 23 H18 L19 7 M11 10 V20 M15 10 V20" stroke="#2F52A0" stroke-width="1.8" fill="none"/></svg>',
+  save:'<svg width="48" height="48" viewBox="0 0 48 48"><path d="M5 5 H36 L43 12 V43 H5 Z" stroke="#2F52A0" stroke-width="2.6" fill="none" stroke-linejoin="round"/><path d="M13 5 V17 H33 V5 M13 43 V28 H35 V43 M20 33 H28 V43" stroke="#2F52A0" stroke-width="2.6" fill="none"/></svg>',
+  penL:'<svg width="50" height="50" viewBox="0 0 50 50"><path d="M6 44 L9 34 L37 6 L44 13 L16 41 Z M32 11 L39 18" stroke="#2F52A0" stroke-width="2.6" fill="none" stroke-linejoin="round"/></svg>',
+  rcheck:'<svg width="30" height="30" viewBox="0 0 30 30"><path d="M5 15 L12 23 L25 6" stroke="#B22222" stroke-width="3.4" fill="none" stroke-linecap="round"/></svg>',
+  pen:'<svg viewBox="0 0 26 26"><path d="M4 22 L6 16 L18 4 L22 8 L10 20 Z M15 7 L19 11" stroke="#2F52A0" stroke-width="1.8" fill="none" stroke-linejoin="round"/></svg>'
+};
+const statusIcon = st => ({'承認済み':IC.check,'承認待ち':IC.clock,'差戻':IC.warn}[st] || IC.cross);
+
+/* =========================================================
+   画面状態
+   ========================================================= */
+let ui = {screen:'home', month:'2026-12', stampDate:DEMO_TODAY, stTab:'my', selKey:null,
+  favTab:'list', favMode:'lv1', s1:'', s2:'', s3:'', kw:'', kwSel:'', o1:'', o2:'', oText:'',
+  week:'2026-11-29', col:{my:false, common:false}, gear:false};
+
+function hdr(title, {back=true, home=true, select=false, right=true} = {}){
+  const e = emp();
+  return `<div class="hdr">
+    ${back ? `<button class="icon" onclick="A.go('${ui.back||'home'}')" aria-label="戻る">${IC.back}</button>` : ''}
+    <div class="title">${title}</div>
+    <div class="kv"><b>従業員番号</b>${select
+      ? `<select class="empsel" onchange="A.setEmp(this.value)">${EMPS.map(x=>`<option ${x.no===e.no?'selected':''}>${x.no}</option>`).join('')}</select>`
+      : esc(e.no)}</div>
+    <div class="kv"><b>氏名</b>${esc(e.name)}</div>
+    <div class="kv"><b>会社名</b>${esc(e.company)}</div>
+    <div class="kv"><b>部門</b>${esc(e.dept)}</div>
+    <div class="kv"><b>グループ</b>${esc(e.group)}</div>
+    <div class="right">${!right ? '' : home ? `<button class="icon" onclick="A.go('home')" aria-label="ホーム">${IC.home}</button>`
+      : `<button class="icon" onclick="A.go('settings')" aria-label="設定">${IC.gear}</button>`}</div>
+  </div>`;
+}
+
+/* =========================================================
+   日次の集計
+   ========================================================= */
+function dayData(date){ return ed().days[date] || {}; }
+function stampsOn(date){ return ed().stamps.filter(s => s.date===date).sort((a,b)=>(a.start??-1)-(b.start??-1)); }
+function aggr(date, key){
+  let t = 0, a = null, any = false;
+  for (const s of ed().stamps) if (s.date===date && s.key===key && s.end!=null && s.start!=null){
+    any = true; t += mins(s); if (s.amount!=null && s.amount!=='') a = (a||0) + Number(s.amount);
+  }
+  return {time: any ? t : null, amount: a};
+}
+function cellVal(date, key){
+  const e = (dayData(date).edits||{})[key] || {}, g = aggr(date, key);
+  return {time: ('time' in e) ? e.time : g.time, amount: ('amount' in e) ? e.amount : g.amount};
+}
+function dayTotal(date){
+  let t = 0; for (const r of [...myList(), ...commonList()]) t += Number(cellVal(date, r.key).time||0);
+  return t + Number(dayData(date).vac||0);
+}
+function dayStatus(date){
+  const d = dayData(date); if (d.status) return d.status;
+  const has = ed().stamps.some(s=>s.date===date) || Object.keys(d.edits||{}).length || d.vac;
+  return has ? '一時保存' : '';
+}
+const editable = date => !['承認待ち','承認済み'].includes(dayStatus(date));
+
+/* =========================================================
+   1. 提出状況確認（ホーム）
+   ========================================================= */
+function renderHome(){
+  const e = emp(), [y,m] = ui.month.split('-').map(Number);
+  const first = new Date(y, m-1, 1), days = new Date(y, m, 0).getDate();
+  let cells = DOW.map((d,i)=>`<div class="dow ${i===0?'sun':i===6?'sat':''}">${d}</div>`).join('');
+  for (let i=0;i<first.getDay();i++) cells += '<div class="cell"></div>';
+  for (let d=1; d<=days; d++){
+    const ds = `${ui.month}-${String(d).padStart(2,'0')}`, w = pd(ds).getDay(), st = dayStatus(ds);
+    const cls = (HOLIDAYS[ds]||w===0) ? 'sun' : w===6 ? 'sat' : '';
+    const icon = (HOLIDAYS[ds] && !st) ? IC.dash : statusIcon(st);
+    cells += `<div class="cell"><div class="num ${cls} ${ds===DEMO_TODAY?'today':''}">${d}</div>${icon}</div>`;
+  }
+  return hdr('提出状況確認', {back:false, home:false, select:true}) + `
+  <div class="homebtns">
+    <button class="btn" onclick="A.go('fav')">入力対象業務登録</button>
+    <button class="btn" onclick="A.go('stamp')">打刻</button>
+    <button class="btn" onclick="A.go('confirm')">確認／承認依頼</button>
+    <button class="btn" onclick="A.msg('デモ版では、承認／差戻の機能はご利用いただけません。\\n（本番では、上長が部下の承認依頼を承認・差戻します）')">承認／差戻</button>
+  </div>
+  <div class="statbar">
+    <div class="who">${esc(e.name)} さんの提出状況</div>
+    <select onchange="ui.month=this.value;R()">${MONTHS.map(mm=>`<option value="${mm}" ${mm===ui.month?'selected':''}>${mm.slice(0,4)}年${+mm.slice(5)}月</option>`).join('')}</select>
+    <div class="legend"><b>凡例</b>${IC.dash}<span>対象外日付</span>${IC.check}<span>承認済み</span>${IC.clock}<span>承認待ち</span>${IC.warn}<span>差戻</span>${IC.cross}<span>未提出</span></div>
+  </div>
+  <div class="cal">${cells}</div>
+  `;
+}
+
+/* =========================================================
+   2. 入力対象業務登録
+   ========================================================= */
+function renderFav(){
+  const wm = workMenu(), favs = ed().favs;
+  const lv1s = uniq(wm.map(w=>w.lv1)), lv2s = uniq(wm.filter(w=>w.lv1===ui.s1).map(w=>w.lv2));
+  const lv3s = uniq(wm.filter(w=>w.lv1===ui.s1 && w.lv2===ui.s2).map(w=>w.lv3));
+  const opt = (arr, v) => `<option value=""></option>` + arr.map(x=>`<option ${x===v?'selected':''}>${esc(x)}</option>`).join('');
+  let body = '';
+  if (ui.favTab==='list'){
+    body = `<div class="favsearch" role="radiogroup" aria-label="検索方法">
+      <button type="button" class="rb" role="radio" aria-checked="${ui.favMode==='lv1'}" data-f="fm:lv1" onclick="A.favMode('lv1')"><span class="radio ${ui.favMode==='lv1'?'on':''}" aria-hidden="true"></span>業務Lv1から検索する</button>
+      <button type="button" class="rb" role="radio" aria-checked="${ui.favMode==='lv3'}" data-f="fm:lv3" onclick="A.favMode('lv3')"><span class="radio ${ui.favMode==='lv3'?'on':''}" aria-hidden="true"></span>業務Lv3から検索する</button></div>`;
+    if (ui.favMode==='lv1'){
+      body += `<div class="lvrow">
+        <div class="lvbox"><div class="lab">業務Lv1</div><select onchange="A.s(1,this.value)">${opt(lv1s,ui.s1)}</select></div>
+        <div class="lvbox"><div class="lab">業務Lv2</div>${ui.s1?`<select onchange="A.s(2,this.value)">${opt(lv2s,ui.s2)}</select>`:''}</div>
+        <div class="lvbox"><div class="lab">業務Lv3</div>${ui.s2?`<select onchange="A.s(3,this.value)">${opt(lv3s,ui.s3)}</select>`:''}</div></div>
+        <div class="regrow"><button class="btn" ${ui.s3?'':'disabled'} onclick="A.addFav()">▼登録▼</button>
+        <button class="btn" ${ui.s2?'':'disabled'} onclick="A.addFavBulk()">▼Lv2以下一括登録▼</button></div>`;
+    } else {
+      const hits = ui.kw ? wm.filter(w => w.lv3.includes(ui.kw)) : [];
+      body += `<div class="lvrow">
+        <div class="lvbox"><div class="lab">キーワード（業務Lv3）</div><input value="${esc(ui.kw)}" placeholder="例：請求書" onchange="ui.kw=this.value.trim();ui.kwSel='';R()"></div>
+        <div class="lvbox" style="width:880px"><div class="lab">検索結果（${hits.length}件）</div><select onchange="ui.kwSel=this.value;R()">
+          <option value=""></option>${hits.map(w=>{const k=w.lv1+'|'+w.lv2+'|'+w.lv3;return `<option value="${esc(k)}" ${k===ui.kwSel?'selected':''}>${esc(w.lv1+' ／ '+w.lv2+' ／ '+w.lv3)}</option>`}).join('')}</select></div></div>
+        <div class="regrow"><button class="btn" ${ui.kwSel?'':'disabled'} onclick="A.addFavKw()">▼登録▼</button><span style="width:340px"></span></div>`;
+    }
+  } else {
+    // リスト外業務入力：業務Lv1は「業務マスタのLv1」＋「定義外業務シートのLv1」から選択。Lv3は「リスト外業務」固定
+    const outLv1s = uniq([...lv1s, ...MASTER.common.filter(c=>c.src==='teigi').map(c=>c.lv1)]);
+    const outLv2s = lv1s.includes(ui.o1) ? uniq(wm.filter(w=>w.lv1===ui.o1).map(w=>w.lv2))
+                  : uniq(MASTER.common.filter(c=>c.src==='teigi' && c.lv1===ui.o1).map(c=>c.lv2));
+    body = `<div class="favsearch dim"><label><span class="radio on"></span>業務Lv1から検索する</label><label><span class="radio"></span>業務Lv3から検索する</label></div>
+      <div class="lvrow">
+      <div class="lvbox"><div class="lab">業務Lv1</div><select onchange="ui.o1=this.value;ui.o2='';R()">${opt(outLv1s,ui.o1)}</select></div>
+      <div class="lvbox"><div class="lab">業務Lv2</div>${ui.o1?`<select onchange="ui.o2=this.value;R()">${opt(outLv2s,ui.o2)}</select>`:''}</div>
+      <div class="lvbox"><div class="lab">業務Lv3</div><div style="font-size:17px;padding:10px 0 0 2px">リスト外業務</div></div></div>
+      <div style="margin:12px 30px 0 30px"><div class="lab" style="color:#2F52A0;font-size:17px;margin-bottom:6px"><span style="margin-right:14px">*</span>リスト外業務詳細</div>
+        <input class="outtext" value="${esc(ui.oText)}" placeholder="業務内容を入力（例：他部署からの急ぎの照会対応）" oninput="ui.oText=this.value;A.outBtn()"></div>
+      <div class="regrow" style="margin-top:12px"><button class="btn" id="outReg" ${(ui.o2&&ui.oText.trim())?'':'disabled'} onclick="A.addOut()">▼登録▼</button>
+        <button class="btn" disabled>▼Lv2以下一括登録▼</button></div>`;
+  }
+  const rows = favs.map((f,i)=>`<tr><td>${esc(f.lv1)}</td><td>${esc(f.lv2)}</td><td><div class="clamp" title="${esc(f.lv3)}">${esc(f.lv3)}</div></td>
+    <td>${esc(f.free||'')}</td><td style="text-align:right">${f.out?`<button class="pen" onclick="A.editOut(${i})" aria-label="編集">${IC.pen}</button>`:''}
+    <button class="trash" onclick="A.delFav(${i})" aria-label="削除">${IC.trash}</button></td></tr>`).join('')
+    || `<tr><td colspan="5" style="color:#888;padding:20px">まだ業務が登録されていません。上のプルダウンから、ふだん担当している業務を選んで登録してください。</td></tr>`;
+  return hdr('入力対象業務登録') + `
+  <div class="tabs"><button class="tab ${ui.favTab==='list'?'on':''}" data-f="tab:list" onclick="ui.favTab='list';R()">リストから選択</button>
+    <button class="tab ${ui.favTab==='out'?'on':''}" data-f="tab:out" onclick="ui.favTab='out';R()">リスト外業務入力</button></div>
+  <div style="height:272px">${body}</div>
+  <table class="tbl"><colgroup><col style="width:260px"><col style="width:300px"><col style="width:470px"><col><col style="width:90px"></colgroup>
+    <tr><th>業務Lv1</th><th>業務Lv2</th><th>業務Lv3</th><th>リスト外業務詳細</th><th style="text-align:right">編集 削除</th></tr></table>
+  <div class="scroll" style="height:322px"><table class="tbl"><colgroup><col style="width:260px"><col style="width:300px"><col style="width:470px"><col><col style="width:90px"></colgroup>${rows}</table></div>
+  <button class="btn red gobtn" style="bottom:12px" onclick="A.go('stamp')">打刻へ進む▶▶</button>`;
+}
+
+/* =========================================================
+   3. 打刻
+   ========================================================= */
+function renderStamp(){
+  const list = ui.stTab==='my' ? myList() : commonList();
+  const running = ed().stamps.find(s => s.status==='作業中');
+  const d = pd(ui.stampDate);
+  // 行はクリックに加え、Tabでフォーカスし Enter／Space でも選択できる
+  const rows = list.map(r => `<tr class="pick ${ui.selKey===r.key?'sel':''}" tabindex="0" aria-selected="${ui.selKey===r.key}" data-f="row:${esc(r.key)}"
+      onclick="A.sel(${kid(r.key)})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();A.sel(${kid(r.key)})}" style="cursor:pointer">
+      <td><span class="radio ${ui.selKey===r.key?'on':''}" aria-hidden="true"></span></td><td>${esc(r.lv1)}</td><td>${esc(r.lv2)}</td>
+      <td><div class="clamp" title="${esc(r.lv3)}">${esc(r.lv3)}</div></td><td>${esc(r.free)}</td></tr>`).join('')
+    || `<tr><td colspan="5" style="color:#888;padding:18px">わたしの業務一覧が空です。先に「入力対象業務登録」で業務を登録してください。</td></tr>`;
+  const editingAny = anyEditing();
+  // 承認依頼済み（承認待ち・承認済み）の日付は、打刻の追加・編集・削除をできなくする（作業中・休憩中の終了だけは可能）
+  const locked = !editable(ui.stampDate);
+  const onBreak = running && running.key==='C:'+BREAK.id;
+  const hist = stampsOn(ui.stampDate).map(s => {
+    const badge = s.status==='作業中' ? '<span class="badge">作業中</span>' : isEditing(s) ? '<span class="badge">編集中</span>' : '';
+    const lv = `<td style="padding:6px 0 6px 4px">${badge}</td>
+      <td>${esc(s.lv1)}</td><td>${esc(s.lv2)}</td><td><div class="clamp" title="${esc(s.lv3)}">${esc(s.lv3)}</div></td><td>${esc(s.free||'')}</td>`;
+    const del = locked ? `<td style="text-align:center"><button class="trash" disabled aria-label="削除できません">${IC.trash}</button></td>`
+      : `<td style="text-align:center"><button class="trash" onclick="A.delStamp('${s.id}')" aria-label="削除">${IC.trash}</button></td>`;
+    if (isEditing(s) && !locked){
+      const d = draft(s);
+      return `<tr class="editing">${lv}
+        <td><input class="tin" value="${esc(d.s)}" oninput="A.dr('${s.id}','s',this.value)" aria-label="開始時刻"></td>
+        <td><input class="tin" value="${esc(d.e)}" oninput="A.dr('${s.id}','e',this.value)" aria-label="終了時刻"></td>
+        <td></td>
+        <td><input class="tin" style="width:52px" inputmode="numeric" value="${esc(d.a)}" oninput="A.dr('${s.id}','a',this.value)" aria-label="件数"></td>
+        <td style="text-align:center"><button class="savebtn" id="sv_${s.id}" ${draftOk(d)?'':'disabled'} onclick="A.saveStamp('${s.id}')" aria-label="保存">${IC.save}</button></td>${del}</tr>`;
+    }
+    const penOff = s.status==='作業中' || editingAny || locked;
+    return `<tr>${lv}
+      <td>${hm(s.start)}</td><td>${hm(s.end)}</td>
+      <td style="text-align:right">${mins(s)??''}</td><td style="text-align:right">${s.amount??''}</td>
+      <td style="text-align:center">${penOff?`<button class="pen off" disabled aria-label="編集できません">${IC.pen}</button>`:`<button class="pen" onclick="A.editStamp('${s.id}')" aria-label="編集">${IC.pen}</button>`}</td>${del}</tr>`;
+  }).join('');
+  const cg = `<colgroup><col style="width:56px"><col style="width:170px"><col style="width:170px"><col style="width:380px"><col></colgroup>`;
+  const hg = `<colgroup><col style="width:62px"><col style="width:160px"><col style="width:160px"><col style="width:370px"><col><col style="width:62px"><col style="width:62px"><col style="width:80px"><col style="width:60px"><col style="width:56px"><col style="width:56px"></colgroup>`;
+  return hdr('打刻') + `
+  <div class="datenav"><button class="arrow" ${ui.stampDate<=MIN_DATE?'disabled':''} onclick="A.day(-1)" aria-label="前日">&#x2039;</button>
+    <div class="d">${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}(${DOW[d.getDay()]})</div>
+    <button class="arrow" ${ui.stampDate>=MAX_DATE?'disabled':''} onclick="A.day(1)" aria-label="翌日">&#x203A;</button></div>
+  <div class="tabs" style="margin-top:44px"><button class="tab ${ui.stTab==='my'?'on':''}" data-f="tab:my" onclick="ui.stTab='my';R()">わたしの業務一覧</button>
+    <button class="tab ${ui.stTab==='common'?'on':''}" data-f="tab:common" onclick="ui.stTab='common';R()">共通業務一覧</button></div>
+  <table class="tbl">${cg}<tr><th>選択</th><th>業務Lv1</th><th>業務Lv2</th><th>業務Lv3</th><th>リスト外業務詳細</th></tr></table>
+  <div class="scroll" style="height:228px;border-bottom:2px solid #4F6FB7">
+    <table class="tbl">${cg}${rows}</table></div>
+  <div class="stampbtns">
+    <button class="btn red" ${locked?'disabled':''} onclick="A.start()">${running?'次の業務開始':'業務開始'}</button>
+    <button class="btn red" ${running?'':'disabled'} onclick="A.end()">終了</button>
+    <button class="btn red" ${locked && !onBreak?'disabled':''} onclick="A.brk()">${onBreak ? '休憩・離席終了' : '休憩・離席'}</button>
+    <button class="btn red" ${editingAny||locked?'disabled':''} onclick="A.after()">事後登録</button></div>
+  <div class="sec-title">打刻履歴</div>
+  <table class="tbl">${hg}<tr><th></th><th>業務Lv1</th><th>業務Lv2</th><th>業務Lv3</th><th>リスト外業務詳細</th><th>開始</th><th>終了</th><th>時間(分)</th><th>件数</th><th style="text-align:center">編集</th><th style="text-align:center">削除</th></tr></table>
+  <div class="scroll" style="height:196px"><table class="tbl">${hg}${hist}</table></div>
+  <div class="foot">※前営業日と当日の打刻時間に重複がある場合は登録できません。<br>例：「前営業日の23:50 - 25:00」と、「当日の00:10-00:20」の打刻は重複扱いとなります。</div>
+  <button class="btn red gobtn" ${editingAny?'disabled':''} onclick="A.go('confirm')">確認／承認依頼画面へ▶▶</button>`;
+}
+
+/* =========================================================
+   4. 確認／承認依頼
+   ========================================================= */
+function renderConfirm(){
+  const disp = settings().disp;
+  const days = [...Array(7)].map((_,i)=>addDays(ui.week, i)).filter(dt => disp[pd(dt).getDay()]);
+  const wi = WEEKS.indexOf(ui.week);
+  const left = (inner='') => `<div class="cf-left">${inner}</div>`;
+  const arr = (inner='') => `<div class="cf-arr">${inner}</div>`;
+  const rem = days.map(dt => { const r = Math.max(0, REGULAR - dayTotal(dt));
+    return `<div class="cf-day full"><div class="rem"><span class="v ${r>0?'red':''}">${r}</span>分</div></div>`; }).join('');
+  const heads = days.map(dt => { const d = pd(dt); return `<div class="cf-day full"><div class="dhead">${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}<small>${DOW[d.getDay()]}</small></div>
+    <div class="dstat ${dayStatus(dt)==='差戻'?'sashi':''}">${dayStatus(dt)}</div></div>`; }).join('');
+  const colh = `<div class="colh"><div class="l"><div style="width:80px">業務Lv1</div><div style="width:90px">業務Lv2</div><div style="flex:1">業務Lv3</div></div>${arr()}
+    ${days.map(()=>`<div class="cf-day"><div class="h" style="flex:0 0 60px">時間(分)</div><div class="h">件数</div></div>`).join('')}${arr()}</div>`;
+  const rowHtml = r => `<div class="cf-row">
+    <div class="cf-left"><div style="width:80px">${esc(r.lv1)}</div><div style="width:90px">${esc(r.lv2)}</div>
+      <div style="flex:1"><div class="clamp" title="${esc(r.lv3+(r.free?'：'+r.free:''))}">${esc(r.lv3)}${r.free?'<br><span style="color:#555">'+esc(r.free)+'</span>':''}</div></div></div>${arr()}
+    ${days.map(dt => { const v = cellVal(dt, r.key), k = kid(r.key);
+      if (!editable(dt)) return `<div class="cf-day"><div class="ro">${v.time??''}</div><div class="ro">${v.amount??''}</div></div>`;
+      return `<div class="cf-day"><div class="tcell"><span class="spin"><button onclick="A.bump('${dt}',${k},10)" aria-label="10分増やす">&#9650;</button><button onclick="A.bump('${dt}',${k},-10)" aria-label="10分減らす">&#9660;</button></span>
+        <input inputmode="numeric" value="${v.time??''}" onchange="A.setCell('${dt}',${k},'time',this.value)"></div>
+        <input class="acell" inputmode="numeric" value="${v.amount??''}" onchange="A.setCell('${dt}',${k},'amount',this.value)"></div>`; }).join('')}${arr()}</div>`;
+  const my = myList(), cm = commonList();
+  const myH = ui.col.my ? 0 : (ui.col.common ? 330 : 165), cmH = ui.col.common ? 0 : (ui.col.my ? 330 : 125);
+  const sums = days.map(dt => { const t = dayTotal(dt), ok = editable(dt) && t >= REGULAR;
+    return `<div class="cf-day full sum">
+      <div class="r"><span>休暇時間</span>${editable(dt)?`<input value="${dayData(dt).vac||0}" onchange="A.setVac('${dt}',this.value)">`:`<span>${dayData(dt).vac||0}</span>`}</div>
+      <div class="r"><span>入力合計</span><span>${t||''}</span></div>
+      <div class="r"><span>規定時間</span><span>${REGULAR}</span></div>
+      <div class="r"><span>残業時間</span><span>${Math.max(0,t-REGULAR)}</span></div>
+      <button class="reqbtn ${ok?'on':''}" ${ok?'':'disabled'} onclick="A.request('${dt}')">承認依頼</button></div>`; }).join('');
+  return hdr('確認／承認依頼') + `
+  <div class="cf-row" style="margin-top:4px">${left('<div style="text-align:right;padding-right:10px;font-size:14px">残り入力時間</div>')}${arr()}${rem}${arr()}</div>
+  <div class="cf-row">${left()}${arr(`<button class="arrow wk" ${wi<=0?'disabled':''} onclick="A.week(-1)" aria-label="前の週">${IC.wkPrev}</button>`)}${heads}${arr(`<button class="arrow wk" ${wi>=WEEKS.length-1?'disabled':''} onclick="A.week(1)" aria-label="次の週">${IC.wkNext}</button>`)}</div>
+  <button class="secbtn" onclick="ui.col.my=!ui.col.my;R()">${ui.col.my?'＋開く':'✕閉じる'}：わたしの業務一覧</button>
+  ${ui.col.my?'':colh}<div class="rows" style="height:${myH}px">${my.map(rowHtml).join('') || '<div style="padding:12px;color:#888;font-size:14px">わたしの業務一覧が空です。</div>'}</div>
+  <button class="secbtn" onclick="ui.col.common=!ui.col.common;R()">${ui.col.common?'＋開く':'✕閉じる'}：共通業務一覧</button>
+  ${ui.col.common?'':colh}<div class="rows" style="height:${cmH}px">${cm.map(rowHtml).join('')}</div>
+  <div class="cf-row" style="align-items:flex-start;margin-top:4px">
+    <div class="cf-left notes">●注意事項<br>1. 時間は「分」単位で入力してください。<br>2. 休暇(遅刻・早退含む)・フレックス取得時は休暇時間として入力してください。<br>3. 本画面で工数・件数情報を入力/編集した場合、曜日ごとに「承認依頼」を実施してください。<br>（複数曜日の内容を一度に更新・承認依頼することはできません。）
+      <button class="btn red" style="display:block;margin-top:8px;width:300px;height:40px;font-size:21px" onclick="A.go('stamp')">◀◀打刻画面へ</button></div>${arr()}${sums}${arr()}</div>`;
+}
+
+/* =========================================================
+   5. 設定（ホームの歯車から開く）
+   ========================================================= */
+function renderSettings(){
+  const e = emp(), ap = APPROVERS.find(a => a.mail===ui.apTmp);
+  const disp = ui.dispEdit ? ui.dispTmp : settings().disp;
+  return hdr('設定', {right:false}) + `
+  <div class="set-wrap">
+    <div class="set-col">
+      <div class="set-h"><h2>承認者設定</h2><button class="icon" onclick="A.apEditToggle()" aria-label="${ui.apEdit?'承認者を保存':'承認者を編集'}">${ui.apEdit?IC.save:IC.penL}</button></div>
+      <div class="set-desc">ご自身の承認者を変更することができます。</div>
+      <div class="set-grid">
+        <div class="lab">あなたの権限</div><div class="lab">あなたの承認者</div>
+        <div class="val">${esc(e.flag)}</div>
+        <div>${ui.apEdit
+          ? `<select onchange="ui.apTmp=this.value;R()" aria-label="あなたの承認者">${APPROVERS.map(a=>`<option value="${esc(a.mail)}" ${a.mail===ui.apTmp?'selected':''}>${esc(a.mail)}</option>`).join('')}</select>`
+          : `<div class="ap-mail">${esc(ui.apTmp)}</div>`}
+          ${ap ? `<div class="set-info">${esc(ap.name)} さん<br><span style="font-size:17px">会社：${esc(ap.company)}<br>部門：${esc(ap.dept)}</span></div>` : ''}</div>
+      </div>
+    </div>
+    <div class="set-col r">
+      <div class="set-h"><h2>曜日表示設定</h2><button class="icon" onclick="A.dispEditToggle()" aria-label="${ui.dispEdit?'曜日表示設定を保存':'曜日表示設定を編集'}">${ui.dispEdit?IC.save:IC.penL}</button></div>
+      <div class="set-desc">確認/承認依頼画面における曜日表示の設定を変更することができます。</div>
+      <div class="dows">${DOW.map(d=>`<div class="n">${d}</div>`).join('')}
+        ${disp.map((on,i)=>`<div class="c">${ui.dispEdit
+          ? `<button class="${on?'on':''}" onclick="A.dispToggle(${i})" aria-label="${DOW[i]}曜日の表示を切り替え">${on?IC.rcheck:''}</button>`
+          : (on?IC.rcheck:'')}</div>`).join('')}</div>
+    </div>
+  </div>`;
+}
+
+/* =========================================================
+   モーダル
+   ========================================================= */
+const M = document.getElementById('modal');
+function modal(html){ M.innerHTML = `<div class="box">${html}</div>`; M.classList.add('on'); }
+function closeModal(){ M.classList.remove('on'); M.innerHTML = ''; }
+let modalOk = null;
+
+/* =========================================================
+   操作
+   ========================================================= */
+const A = {
+  go(s){ ui.back = 'home'; if (s==='confirm') ui.back = ui.screen==='stamp' ? 'stamp' : 'home';
+         if (s==='stamp') ui.back = ui.screen==='fav' ? 'fav' : 'home';
+         if (s==='confirm'){ ui.week = WEEKS.find(w => ui.stampDate>=w && ui.stampDate<=addDays(w,6)) || WEEKS[1]; }
+         if (s==='settings'){ const st = settings(); ui.apTmp = st.approver; ui.apEdit = false; ui.dispEdit = false; ui.dispTmp = [...st.disp]; }
+         ui.editId = null; ui.drafts = {}; ui.screen = s; ui.gear = false; R(); },
+  // 画面の一時的な状態（選択途中・編集途中の内容）をすべて消す。設定画面の編集中の内容は、保存済みの値に戻して編集モードを解除する
+  // 従業員の切替・デモデータのリセット・業務マスタの読み込みで使う（前のデータに基づく選択や編集が残らないようにするため）
+  clearTransient(){
+    ui.selKey = null; ui.s1=ui.s2=ui.s3=''; ui.o1=ui.o2=''; ui.oText=''; ui.kw=''; ui.kwSel='';
+    ui.editId = null; ui.drafts = {};
+    const st = settings(); ui.apTmp = st.approver; ui.apEdit = false; ui.dispTmp = [...st.disp]; ui.dispEdit = false;
+  },
+  setEmp(no){ S.emp = no; save(); A.clearTransient(); R(); },
+  // 管理者用メニュー：開くときは毎回パスワード入力が必要。閉じるときは不要
+  gear(){
+    if (ui.gear){ ui.gear = false; return R(); }
+    modalOk = () => {
+      const v = document.getElementById('mf_pw').value;
+      if (v !== ADMIN_PASS){ document.getElementById('mf_err').textContent = 'パスワードが違います。'; document.getElementById('mf_pw').select(); return false; }
+      ui.gear = true; R();
+    };
+    modal(`<div class="form"><div style="font-weight:700;margin-bottom:6px">管理者用メニューを開くには、パスワードを入力してください。</div>
+      <div class="f"><b>パスワード</b><input id="mf_pw" type="password" style="width:260px" autocomplete="off"
+        onkeydown="if(event.key==='Enter')A.okModal()" oninput="document.getElementById('mf_err').textContent=''"></div><div class="err" id="mf_err"></div></div>
+      <div class="btns"><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn" onclick="A.okModal()">開く</button></div>`);
+    setTimeout(() => { const i = document.getElementById('mf_pw'); if (i) i.focus(); }, 0);
+  },
+  msg(t){ modal(`<div class="msg">${esc(t)}</div><div class="btns"><button class="btn" onclick="closeModal()">OK</button></div>`); },
+  ask(t, ok){ modalOk = ok; modal(`<div class="msg">${esc(t)}</div><div class="btns"><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn" onclick="A.okModal()">確定</button></div>`); },
+  okModal(){ const f = modalOk; const keep = f && f() === false; if (!keep){ modalOk = null; closeModal(); } },   // 入力エラー時は確定処理を残して再入力できるようにする
+  reset(){ A.ask('この従業員のデモデータ（登録業務・打刻・承認依頼）を削除します。\nよろしいですか？', () => { delete S.data[S.emp]; A.clearTransient(); save(); ui.gear=false; R(); }); },
+  resetAll(){ A.ask('全員分のデモデータを削除します。\nよろしいですか？', () => { S.data = {}; A.clearTransient(); save(); ui.gear=false; R(); }); },
+  // 入力対象業務登録
+  favMode(m){ ui.favMode = m; R(); },
+  s(n, v){ if (n===1){ ui.s1=v; ui.s2=ui.s3=''; } else if (n===2){ ui.s2=v; ui.s3=''; } else ui.s3=v; R(); },
+  _addOne(lv1, lv2, lv3){
+    if (!workMenu().some(w => w.lv1===lv1 && w.lv2===lv2 && w.lv3===lv3)) return false;   // 所属グループ外の業務は登録しない
+    const favId = 'W:'+lv1+'|'+lv2+'|'+lv3;
+    if (ed().favs.some(f => f.favId===favId)) return false;
+    ed().favs.push({favId, lv1, lv2, lv3}); return true;
+  },
+  addFav(){ if (!A._addOne(ui.s1, ui.s2, ui.s3)) return A.msg('この業務は既に登録されています。'); ui.s3=''; save(); R(); },
+  addFavBulk(){ const n = workMenu().filter(w=>w.lv1===ui.s1 && w.lv2===ui.s2).filter(w=>A._addOne(w.lv1,w.lv2,w.lv3)).length;
+    save(); ui.s3=''; R(); if (!n) A.msg('この業務Lv2の業務は、すべて登録済みです。'); },
+  addFavKw(){ const [a,b,c] = ui.kwSel.split('|');
+    if (!workMenu().some(w => w.lv1===a && w.lv2===b && w.lv3===c)){ ui.kwSel=''; return R(); }
+    if (!A._addOne(a,b,c)) return A.msg('この業務は既に登録されています。'); ui.kwSel=''; save(); R(); },
+  outBtn(){ const b = document.getElementById('outReg'); if (b) b.disabled = !(ui.o2 && ui.oText.trim()); },
+  addOut(){ if (ed().favs.some(f => f.out && f.lv1===ui.o1 && f.lv2===ui.o2 && f.free===ui.oText.trim())) return A.msg('同じ内容のリスト外業務が既に登録されています。');
+    const d = ed(); d.zc = (d.zc||0)+1;
+    d.favs.push({favId:'Z:'+ui.o1+'|'+ui.o2+'|'+d.zc, lv1:ui.o1, lv2:ui.o2, lv3:'リスト外業務', free:ui.oText.trim(), out:true});
+    ui.oText=''; save(); R(); },
+  editOut(i){ const f = ed().favs[i];
+    modalOk = () => { const v = document.getElementById('mf_free').value.trim();
+      if (!v){ document.getElementById('mf_err').textContent='リスト外業務詳細を入力してください。'; return false; }
+      f.free = v; save(); R(); };
+    modal(`<div class="form"><div class="f"><b>リスト外業務詳細</b><input id="mf_free" style="width:360px" value="${esc(f.free)}"></div><div class="err" id="mf_err"></div></div>
+      <div class="btns"><button class="btn" onclick="closeModal()">キャンセル</button><button class="btn" onclick="A.okModal()">確定</button></div>`); },
+  delFav(i){ const f = ed().favs[i];
+    A.ask(`「${f.lv3}${f.free?'（'+f.free+'）':''}」を\n入力対象業務から削除します。よろしいですか？`, () => { ed().favs.splice(i,1); save(); R(); }); },
+  // 打刻
+  sel(i){ ui.selKey = KEYS[i]; R(); },
+  day(n){ ui.stampDate = addDays(ui.stampDate, n); ui.editId = null; ui.drafts = {}; R(); },
+  _endRunning(){ const r = ed().stamps.find(s => s.status==='作業中');
+    // 表示中の日付に関係なく、現在時刻で終了する（開始より前にはしない）。本番の23:59自動終了はデモ版では行わない
+    if (r){ r.end = Math.max(nowSec(), r.start); r.status=''; } },
+  _begin(row, free){
+    A._endRunning();
+    ed().stamps.push({id:uid(), date:ui.stampDate, key:row.key, lv1:row.lv1, lv2:row.lv2, lv3:row.lv3,
+      free: free ?? row.free, start: nowSec(), end:null, amount:null, status:'作業中'});
+    save(); R();
+  },
+  start(){
+    const row = ui.selKey && rowByKey(ui.selKey);
+    if (!editable(ui.stampDate)) return;
+    if (!row) return A.msg('打刻する業務を一覧から選択してください。');
+    const run = ed().stamps.find(s => s.status==='作業中');
+    if (run && run.key===row.key && run.date===ui.stampDate) return A.msg('選択した業務は既に作業中です。');
+    A._begin(row);
+  },
+  end(){ A._endRunning(); save(); R(); },
+  brk(){ const run = ed().stamps.find(s => s.status==='作業中');
+    if (run && run.key==='C:'+BREAK.id){ A._endRunning(); save(); return R(); }   // 休憩中は「休憩・離席終了」として動作
+    if (!editable(ui.stampDate)) return;
+    A._begin({key:'C:'+BREAK.id, ...BREAK, free:''}); },
+  after(){
+    if (!editable(ui.stampDate)) return;
+    if (anyEditing()) return A.msg('編集中の打刻を先に保存してください。');
+    const row = ui.selKey && rowByKey(ui.selKey);
+    if (!row) return A.msg('事後登録する業務を一覧から選択してください。');
+    ed().stamps.push({id:uid(), date:ui.stampDate, key:row.key, lv1:row.lv1, lv2:row.lv2, lv3:row.lv3, free:row.free, start:null, end:null, amount:null, status:'編集中'});
+    save(); R();
+  },
+  editStamp(id){ if (!editable(ui.stampDate)) return; if (anyEditing()) return A.msg('編集中の打刻を先に保存してください。'); ui.editId = id; R(); },
+  dr(id, f, v){ const s = ed().stamps.find(x => x.id===id); if (!s) return; const d = draft(s); d[f] = v;
+    const b = document.getElementById('sv_'+id); if (b) b.disabled = !draftOk(d); },
+  saveStamp(id){
+    const s = ed().stamps.find(x => x.id===id); if (!s || !editable(s.date)) return; const d = draft(s);
+    const st = (d.s===hm(s.start) && s.start!=null) ? s.start : parseHm(d.s);
+    const en = (d.e===hm(s.end) && s.end!=null) ? s.end : parseHm(d.e);
+    const am = toHalf(d.a);
+    if (st==null || en==null) return A.msg('開始・終了の時刻を「09:30」の形式で入力してください。');
+    if (en < st) return A.msg('終了時刻は開始時刻以降にしてください。');
+    if (am!=='' && !/^\d+$/.test(am)) return A.msg('件数は0以上の整数で入力してください。');
+    const clash = ed().stamps.some(o => o.id!==s.id && o.date===s.date && o.start!=null &&
+      st < (o.end ?? (o.status==='作業中' ? nowSec() : o.start)) && en > o.start);
+    if (clash) return A.msg('他の打刻と時間が重複しています。時刻を見直してください。');
+    s.start = st; s.end = en; s.amount = am==='' ? null : Number(am); s.status = '';
+    delete ui.drafts[id]; ui.editId = null; save(); R();
+  },
+  delStamp(id){ const t = ed().stamps.find(s => s.id===id); if (!t || !editable(t.date)) return; A.ask('この打刻を削除します。よろしいですか？', () => { ed().stamps = ed().stamps.filter(s => s.id!==id);
+    if (ui.editId===id) ui.editId = null; if (ui.drafts) delete ui.drafts[id]; save(); R(); }); },
+  // 確認／承認依頼
+  week(n){ const i = WEEKS.indexOf(ui.week)+n; if (WEEKS[i]){ ui.week = WEEKS[i]; R(); } },
+  _edit(date, key){ const d = (ed().days[date] ||= {}); d.edits ||= {}; return (d.edits[key] ||= {}); },
+  setCell(date, ki, f, v){ const key = KEYS[ki];
+    v = toHalf(v);
+    if (v!=='' && !/^\d+$/.test(v)){ R(); return A.msg('0以上の整数で入力してください。'); }
+    A._edit(date, key)[f] = v==='' ? null : Number(v); save(); R(); },
+  bump(date, ki, n){ const key = KEYS[ki]; const cur = Number(cellVal(date, key).time||0); A._edit(date, key).time = Math.max(0, cur+n); save(); R(); },
+  setVac(date, v){ v = toHalf(v); if (v!=='' && !/^\d+$/.test(v)){ R(); return A.msg('休暇時間は0以上の整数（分）で入力してください。'); }
+    (ed().days[date] ||= {}).vac = v==='' ? 0 : Number(v); save(); R(); },
+  apEditToggle(){
+    if (!ui.apEdit){ ui.apEdit = true; ui.apTmp = settings().approver; return R(); }
+    settings().approver = ui.apTmp; ui.apEdit = false; save(); R(); A.msg('承認者を保存しました。');
+  },
+  dispEditToggle(){
+    if (!ui.dispEdit){ ui.dispEdit = true; ui.dispTmp = [...settings().disp]; return R(); }
+    if (!ui.dispTmp.some(Boolean)) return A.msg('表示する曜日を1つ以上選択してください。');
+    settings().disp = [...ui.dispTmp]; ui.dispEdit = false; save(); R(); A.msg('曜日表示設定を保存しました。');
+  },
+  dispToggle(i){ ui.dispTmp[i] = !ui.dispTmp[i]; R(); },
+  // 承認依頼時点の各行の値を edits に確定させる（依頼後に作業中の打刻を終了しても、依頼した値が変わらないようにする）
+  // 承認依頼：その日付に「編集中」（事後登録で未保存）の打刻があれば、押した時点で棄却してから確認ダイアログを出す
+  request(date){
+    const pend = ed().stamps.filter(s => s.date===date && s.status==='編集中').map(s => s.id);
+    if (pend.length){ ed().stamps = ed().stamps.filter(s => !pend.includes(s.id)); if (ui.drafts) pend.forEach(id => delete ui.drafts[id]); save(); R(); }
+    A.ask('入力内容を確定します。\n承認を依頼してよろしいですか？', () => {
+    for (const r of [...myList(), ...commonList()]){ const v = cellVal(date, r.key), e = A._edit(date, r.key); e.time = v.time; e.amount = v.amount; }
+    ed().days[date].status = '承認待ち'; save(); R(); }); }
+};
+
+/* =========================================================
+   描画・拡大縮小
+   ========================================================= */
+function R(){
+  const el = document.getElementById('screen');
+  // 再描画でフォーカスが失われないよう、data-f を持つ要素のフォーカスを描画後に戻す（キーボード操作用）
+  const fk = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.f : null;
+  el.innerHTML = ({home:renderHome, fav:renderFav, stamp:renderStamp, confirm:renderConfirm, settings:renderSettings})[ui.screen]()
+    + (ui.gear ? `<div class="gearmenu">
+      <button onclick="A.reset()">デモデータをリセット（この従業員）</button>
+      <button onclick="A.resetAll()">デモデータをリセット（全員）</button>
+      <button onclick="document.getElementById('xfile').click()">業務マスタ（Excel）を読み込む</button>
+      <div class="src">使用中の業務マスタ：${esc(masterSource)}<br>オペレーション業務 ${MASTER.work.length}件／共通業務 ${MASTER.common.length+1}件</div>
+    </div>` : '');
+  if (fk){ const t = [...el.querySelectorAll('[data-f]')].find(x => x.dataset.f===fk); if (t) t.focus(); }
+}
+function fit(){
+  const c = document.getElementById('canvas'), w = innerWidth, h = innerHeight - 34;
+  const k = Math.min(w/1366, h/768);
+  c.style.transform = `scale(${k})`;
+  c.style.left = Math.max(0, (w - 1366*k)/2) + 'px';
+}
+document.getElementById('xfile').addEventListener('change', async ev => {
+  const f = ev.target.files[0]; ev.target.value = ''; if (!f) return;
+  try { MASTER = buildMaster(await readXlsx(await f.arrayBuffer())); masterSource = f.name + '（手動読み込み）'; A.clearTransient(); ui.gear=false; R();
+        A.msg(`業務マスタを読み込みました。\nオペレーション業務 ${MASTER.work.length}件／共通業務 ${MASTER.common.length+1}件`); }
+  catch(e){ A.msg('業務マスタを読み込めませんでした。\n' + e.message); }
+});
+addEventListener('resize', fit);
+fit(); R();
+tryLoadMasterFile().then(R);
+</script>
+</body>
+</html>
